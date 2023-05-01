@@ -42,10 +42,14 @@ def load_data(directory):
                         deletec_value.append(values)
     print(deletec_value)
 
+def clean_data():
+    c.execute("""DELETE FROM accidents
+                WHERE Crime_type IS NOT 'burglary'
+                """)
 
-make_db()
-load_data('E:\\data\\data')
-
+#make_db()
+#load_data('E:\\data\\data')
+clean_data()
 
 
 
