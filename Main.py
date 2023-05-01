@@ -44,7 +44,7 @@ def load_data(directory):
 
 def clean_data():
     c.execute("""DELETE FROM accidents
-                WHERE Crime_type IS NOT 'burglary'
+                WHERE Crime_type IS NOT 'Burglary'
                 """)
 
 #make_db()
