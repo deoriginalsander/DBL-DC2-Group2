@@ -2,7 +2,7 @@ import os
 import sqlite3
 import pandas as pd
 
-conn = sqlite3.connect('database.db')
+conn = sqlite3.connect('C:\\database.db')
 c = conn.cursor()
 
 def make_db():
@@ -48,10 +48,18 @@ def clean_data():
                 """)
     c.execute("""DELETE FROM accidents
                 WHERE Crime_type IS NOT 'Burglary'""")
+    # c.execute("""ALTER TABLE accidents
+    #                 DROP COLUMN Reported_by""")
+    # c.execute("""ALTER TABLE accidents
+    #                 DROP COLUMN context""")
     c.execute("""ALTER TABLE accidents
-                    DROP COLUMN Reported_by""")
+                    DROP COLUMN Falls_within""")
     c.execute("""ALTER TABLE accidents
-                    DROP COLUMN context""")
+                    DROP COLUMN Crime_ID""")
+    c.execute("""ALTER TABLE accidents
+                    DROP COLUMN LSOA_code""")
+    c.execute("""ALTER TABLE accidents
+                    DROP COLUMN Crime_type""")
 
 
 # make_db()
