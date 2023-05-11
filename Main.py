@@ -64,9 +64,18 @@ def clean_data():
 
 # make_db()
 # load_data('E:\\data\\data')
-clean_data()
+# clean_data()
 
+def predict_burglary():
+    month = input('Select month')
+    per_mont = c.execute("""SELECT COUNT(Latitude), month, LSOA_name
+                        FROM accidents
+                        Where SUBSTRING(month, 6,6) IS '"""+month+"""'
+                        GROUP BY month, LSOA_name""")
+    df = pd.DataFrame(per_mont)
+    print(df)
 
+predict_burglary()
 
 
 conn.commit()
