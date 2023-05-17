@@ -1,6 +1,9 @@
 import os
 import sqlite3
 import pandas as pd
+import datetime
+from datetime import date
+import numpy as np
 
 conn = sqlite3.connect('C:\\database.db')
 c = conn.cursor()
@@ -61,20 +64,93 @@ def clean_data():
     c.execute("""ALTER TABLE accidents
                     DROP COLUMN Crime_type""")
 
+def predict_burglary():
+    per_month = c.execute("""SELECT COUNT(Latitude), month, LSOA_name
+                        FROM accidents
+                        GROUP BY month, LSOA_name""")
+    df = pd.DataFrame(per_month, columns = ['count', 'month', 'LSOA_name'])
+    #print(df)
+    c.execute("""SELECT LSOA_name
+                            FROM accidents
+                            GROUP BY LSOA_name""")
+    LSOA = c.fetchall()
+    LSOA_list = [row[0] for row in LSOA]
+
+    #getting inputs for determining the timeline
+    date1 = date.today()
+    month = int(input('Select month'))
+    year = int(input('Select year'))
+    amount_of_teams = int(input('How many teams are available?'))
+
+    #checking if the asked month has already passed or is the next month.
+    latest_month = df['month'][-1:].values[0]
+    if month - int(latest_month[5:7]) >1 and year>=int(latest_month[0:4]):
+        print('There is not enough data to determine result')
+        return
+
+
+
+    #looping over the LSOA's to find the corresponding value for each of them and assigning a value to that LSOA
+    LSOA_values = {}
+    memory = [month, year]
+    print(memory)
+    for item in LSOA_list:
+        #defining needed vars
+        month = memory[0]
+        year = memory[1]
+        score = 0
+        monthly_ratios = []
+        weighted_list = [0.8,0.6,0.4,0.2,0.1]
+        #getting data for that specific LSOA
+        df2 = df[df['LSOA_name']==item]
+
+        # getting the values for the 5 months before hand
+        for i in range(1, 6):
+            month = int(month) - 1
+            if month < 1:
+                month += 12
+                year -=1
+            if len(str(month)) == 1:
+                month = '0'+str(month)
+
+            #getting the values for this year
+            current_year_df = df2[df2['month']==(str(year)+'-'+str(month))]
+            current_year_series = current_year_df['count'].values
+            try:
+                count_current_year = current_year_series[0]
+            except:
+                count_current_year = 0
+            #getting values for previous year
+            previous_year_df = df2[df2['month']==(str(year-1)+'-'+str(month))]
+            previous_year_series = previous_year_df['count'].values
+            try:
+                count_previous_year = previous_year_series[0]
+            except:
+                count_previous_year = 1
+            monthly_ratios.append(count_current_year/count_previous_year)
+        end_list = []
+        for i in range(0,4):
+            end_list.append(monthly_ratios[i]*weighted_list[i] )
+        if len(str(memory[0]))==1:
+            moth_selected = '0'+str(memory[0])
+        last_year_current_month = df2[df2['month']==(str(memory[1]-1)+'-'+moth_selected)]
+        #print(str(memory[1]-1)+'-'+moth_selected)
+        try:
+            score = sum(end_list)/5*last_year_current_month.values[0][0]
+        except:
+            score = sum(end_list)/5
+        LSOA_values[item] = score
+
+    list_of_patrols = []
+    for i in range(0,amount_of_teams):
+        most_treat_LSOA = list(LSOA_values.keys())[list(LSOA_values.values()).index(max(LSOA_values.values()))]
+        list_of_patrols.append(most_treat_LSOA)
+        LSOA_values.pop(most_treat_LSOA)
+    print(list_of_patrols)
 
 # make_db()
 # load_data('E:\\data\\data')
 # clean_data()
-
-def predict_burglary():
-    month = input('Select month')
-    per_mont = c.execute("""SELECT COUNT(Latitude), month, LSOA_name
-                        FROM accidents
-                        Where SUBSTRING(month, 6,6) IS '"""+month+"""'
-                        GROUP BY month, LSOA_name""")
-    df = pd.DataFrame(per_mont)
-    print(df)
-
 predict_burglary()
 
 
