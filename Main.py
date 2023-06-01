@@ -1,6 +1,14 @@
+# imports
 import os
 import sqlite3
 import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from shapely.geometry import Point, Polygon, MultiPolygon
+import geopandas as gpd
+from sklearn.cluster import KMeans
+from matplotlib import cm
+from pulp import *
 import datetime
 from datetime import date
 import numpy as np
@@ -132,8 +140,8 @@ def predict_burglary():
                 real_previous_year = 0
                 count_previous_year = 1
 
-            #getting values 2 year before
-            two_years_ago = df2[df2['month']== (str(year-2) + '-' + str(month))]
+            # getting values 2 year before
+            two_years_ago = df2[df2['month'] == (str(year - 2) + '-' + str(month))]
             two_year_ago_series = two_years_ago['count'].values
             try:
                 count_two_year_ago = two_year_ago_series[0]
@@ -145,12 +153,12 @@ def predict_burglary():
 
         end_list = []
         for i in range(0, 5):
-            end_list.append((monthly_ratios_1[i]*3+monthly_ratios_2[i])/4 * weighted_list[i])
+            end_list.append((monthly_ratios_1[i] * 3 + monthly_ratios_2[i]) / 4 * weighted_list[i])
         # if len(str(memory[0]))==1:
         #     moth_selected = '0'+str(memory[0])
         last_year_current_month = df2[df2['month'] == (str(memory[1] - 1) + '-' + memory[0])]
-        two_year_ago_current_month = df2[df2['month']==(str(memory[1]-2)+'-'+memory[0])]
-        rate_current_month_last_years = last_year_current_month[0][0]/two_year_ago_current_month[0][0]
+        two_year_ago_current_month = df2[df2['month'] == (str(memory[1] - 2) + '-' + memory[0])]
+        rate_current_month_last_years = last_year_current_month[0][0] / two_year_ago_current_month[0][0]
         # print(str(memory[1]-1)+'-'+moth_selected)
         try:
             score = sum(end_list) / 5 * last_year_current_month.values[0][0]
@@ -191,6 +199,52 @@ def get_most_burglary_LSOA(month, year):
 # load_data('E:\\data\\data')
 # clean_data()
 predict_burglary()
+
+
+def vis_results(output: dict):
+    # load Barnet deprivation data
+    df_depr = pd.read_excel('ID 2019 for London.xlsx ', sheet_name='IMD 2019')
+    df_depr_barn = df_depr[df_depr['Local Authority District name (2019)'] == 'Barnet']
+
+    # load London LSOA geometry data
+    ldn_df = gpd.read_file('LSOA_2011_London_gen_MHW.shp')
+    ldn_df.rename(columns={'LSOA11CD': 'LSOA code (2011)'}, inplace=True)
+
+    # load major road geometry data
+    roads_df = gpd.read_file('Major_Road_Network_2018_Open_Roads.shp')
+
+    # join deprivation data and lsoa boundaries
+    df = pd.merge(df_depr_barn, ldn_df, on='LSOA code (2011)')
+    gdf = gpd.GeoDataFrame(df)
+    gdf.rename(columns={'Index of Multiple Deprivation (IMD) Score': 'MultipleDeprivation'}, inplace=True)
+
+    # Create Visualisation of Barnet LSOAs and Roads
+    minx, miny, maxx, maxy = gdf.total_bounds
+    fig, ax = plt.subplots(1, figsize=(15, 15))
+    ax.set_xlim(minx, maxx)
+    ax.set_ylim(miny, maxy)
+    roads_df.plot(ax=ax, alpha=1, column='roadClassi', edgecolor="blue")
+    gdf['geometry'].plot(ax=ax, alpha=1, color='w', edgecolor="black")
+    ax.axis('off')
+    ax.set_title('Predictions for Burglaries in Barnet based on the last 5 months',
+                 fontdict={'fontsize': '15', 'fontweight': '3'})
+
+    # join model output with geometric data
+    output_df = pd.DataFrame.from_dict(output)
+    output_df.rename(columns={'1': 'output_values'}, inplace=True)
+    geo_output = pd.merge(gdf[['geometry', 'LSOA code (2011)']], output_df, on='LSOA code (2011)')
+    geo_output = gpd.GeoDataFrame(geo_output)
+
+    # plot output data
+    geo_output.plot(ax=ax, alpha=1, column='output_values', cmap='Greens')
+    sm = plt.cm.ScalarMappable(cmap='Greens', norm=plt.Normalize(vmin=geo_output.output_values.min(),
+                                                                 vmax=geo_output.output_values.max()))
+    cbar = fig.colorbar(sm, shrink=0.5)
+
+    return None
+
+
+vis_results(predict_burglary())
 
 conn.commit()
 conn.close()
