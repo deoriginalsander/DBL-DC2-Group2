@@ -168,10 +168,9 @@ def predict_burglary():
             score = sum(end_list) / 5 * last_year_current_month.values[0][0]
         except:
             score = sum(end_list) / 5
-
-
-
         LSOA_values[item] = score
+
+    return(LSOA_values)
 
     list_of_patrols = []
     for i in range(0, amount_of_teams):
@@ -180,15 +179,13 @@ def predict_burglary():
         list_of_patrols.append(most_treat_LSOA + ' ' + str(highest_count))
         LSOA_values.pop(most_treat_LSOA)
 
-    print(get_most_burglary_LSOA())
-
-    high_risk = get_most_burglary_LSOA(memory[0], memory[1])
-    for item in list_of_patrols:
-        if item[:11] in high_risk:
-            print(item[:11])
-        else:
-            print(item[:11] + ' nope')
-    print(list_of_patrols)
+    # high_risk = get_most_burglary_LSOA(memory[0], memory[1])
+    # for item in list_of_patrols:
+    #     if item[:11] in high_risk:
+    #         print(item[:11])
+    #     else:
+    #         print(item[:11] + ' nope')
+    # print(list_of_patrols)
 
 
 def get_most_burglary_LSOA(month, year):
