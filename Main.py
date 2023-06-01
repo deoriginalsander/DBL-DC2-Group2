@@ -143,6 +143,18 @@ def predict_burglary():
             monthly_ratios_1.append(count_current_year / count_previous_year)
             monthly_ratios_2.append(count_current_year / count_two_year_ago)
 
+        #computing average over last 12 months
+        for year in range(2010,memory[1]-1):
+            df2 = df2.drop(list(df2[df2['month'].str.contains(str(year))].index))
+        for months in range(1,int(memory[0])+1):
+            if len(str(months)) ==1:
+                remove_month = '0'+str(months)
+            else:
+                remove_month = str(months)
+            df2 = df2.drop(list(df2[df2['month']==str(memory[1]-1)+'-'+remove_month].index))
+        average_last_12_months = sum(df2['count'])/12
+
+        #computing the score
         end_list = []
         for i in range(0, 5):
             end_list.append((monthly_ratios_1[i]*3+monthly_ratios_2[i])/4 * weighted_list[i])
@@ -150,12 +162,15 @@ def predict_burglary():
         #     moth_selected = '0'+str(memory[0])
         last_year_current_month = df2[df2['month'] == (str(memory[1] - 1) + '-' + memory[0])]
         two_year_ago_current_month = df2[df2['month']==(str(memory[1]-2)+'-'+memory[0])]
-        rate_current_month_last_years = last_year_current_month[0][0]/two_year_ago_current_month[0][0]
+        #rate_current_month_last_years = last_year_current_month[0][0]/two_year_ago_current_month[0][0]
         # print(str(memory[1]-1)+'-'+moth_selected)
         try:
             score = sum(end_list) / 5 * last_year_current_month.values[0][0]
         except:
             score = sum(end_list) / 5
+
+
+
         LSOA_values[item] = score
 
     list_of_patrols = []
@@ -164,6 +179,8 @@ def predict_burglary():
         most_treat_LSOA = list(LSOA_values.keys())[list(LSOA_values.values()).index(highest_count)]
         list_of_patrols.append(most_treat_LSOA + ' ' + str(highest_count))
         LSOA_values.pop(most_treat_LSOA)
+
+    print(get_most_burglary_LSOA())
 
     high_risk = get_most_burglary_LSOA(memory[0], memory[1])
     for item in list_of_patrols:
