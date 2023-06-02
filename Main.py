@@ -12,7 +12,7 @@ from sklearn.cluster import KMeans
 from matplotlib import cm
 from pulp import *
 
-conn = sqlite3.connect('C:\\database.db')
+conn = sqlite3.connect('.\\database.db')
 c = conn.cursor()
 
 
@@ -176,7 +176,7 @@ def predict_burglary():
         except:
             score = sum(end_list) / 5
         LSOA_values[item] = score
-
+    print(LSOA_values)
     return (LSOA_values)
 
     list_of_patrols = []
@@ -246,9 +246,9 @@ def vis_results(output: dict):
     geo_output = pd.merge(gdf[['geometry', 'LSOA name (2011)']], output_df, on='LSOA name (2011)')
     geo_output = gpd.GeoDataFrame(geo_output)
     # plot output data
-    geo_output.plot(ax=ax, alpha=1, column='output_values', cmap='Greens')
-    sm = plt.cm.ScalarMappable(cmap='Greens', norm=plt.Normalize(vmin=geo_output.output_values.min(),
-                                                                 vmax=geo_output.output_values.max()))
+    geo_output.plot(ax=ax, alpha=1, column='output_values', cmap='YlOrRd')
+    sm = plt.cm.ScalarMappable(cmap='YlOrRd')#, norm=plt.Normalize(vmin=geo_output.output_values.min(),
+                                                                 #vmax=geo_output.output_values.max()))
     cbar = fig.colorbar(sm, shrink=0.5)
 
     return plt.show()
