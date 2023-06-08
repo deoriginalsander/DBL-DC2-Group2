@@ -90,7 +90,7 @@ def predict_burglary():
     date1 = date.today()
     month = int(input('Select month'))
     year = int(input('Select year'))
-    amount_of_teams = int(input('How many teams are available?'))
+    mode = input('seasonal or Yearly average?')
 
     # checking if the asked month has already passed or is the next month.
     latest_month = df['month'][-1:].values[0]
@@ -100,7 +100,10 @@ def predict_burglary():
 
     # looping over the LSOA's to find the corresponding value for each of them and assigning a value to that LSOA
     LSOA_values = {}
-    memory = ['0' + str(month), year]
+    if len(str(month))==1:
+        memory = ['0' + str(month), year]
+    else:
+        memory = [str(month), year]
     for item in LSOA_list:
         # defining needed vars
         month = int(memory[0])
@@ -171,28 +174,32 @@ def predict_burglary():
         two_year_ago_current_month = df2[df2['month'] == (str(memory[1] - 2) + '-' + memory[0])]
         # rate_current_month_last_years = last_year_current_month[0][0]/two_year_ago_current_month[0][0]
         # print(str(memory[1]-1)+'-'+moth_selected)
-        try:
-            score = sum(end_list) / 5 * last_year_current_month.values[0][0]
-        except:
-            score = sum(end_list) / 5
+        if mode == 'seasonal':
+            try:
+                score = sum(end_list) / 5 * last_year_current_month[0][0]
+            except:
+                score = sum(end_list) / 5
+
+        else:
+            score = sum(end_list) / 5 * average_last_12_months
         LSOA_values[item] = score
     print(LSOA_values)
     return (LSOA_values)
 
     list_of_patrols = []
-    for i in range(0, amount_of_teams):
+    for i in range(0, 10):
         highest_count = max(LSOA_values.values())
         most_treat_LSOA = list(LSOA_values.keys())[list(LSOA_values.values()).index(highest_count)]
         list_of_patrols.append(most_treat_LSOA + ' ' + str(highest_count))
         LSOA_values.pop(most_treat_LSOA)
 
-    # high_risk = get_most_burglary_LSOA(memory[0], memory[1])
-    # for item in list_of_patrols:
-    #     if item[:11] in high_risk:
-    #         print(item[:11])
-    #     else:
-    #         print(item[:11] + ' nope')
-    # print(list_of_patrols)
+    high_risk = get_most_burglary_LSOA(memory[0], memory[1])
+    for item in list_of_patrols:
+        if item[:11] in high_risk:
+            print(item[:11])
+        else:
+            print(item[:11] + ' nope')
+    print(list_of_patrols)
 
 
 def get_most_burglary_LSOA(month, year):
@@ -211,6 +218,7 @@ def get_most_burglary_LSOA(month, year):
 # make_db()
 # load_data('E:\\data\\data')
 # clean_data()
+#predict_burglary()
 
 def vis_results(output: dict):
     # load Barnet deprivation data
@@ -221,8 +229,12 @@ def vis_results(output: dict):
     ldn_df = gpd.read_file('LSOA_2011_London_gen_MHW.shp')
     ldn_df.rename(columns={'LSOA11CD': 'LSOA code (2011)'}, inplace=True)
 
+    # load ward geometry data
+    wards_gdf = gpd.read_file('Wards_December_2022_Boundaries_UK_BGC_Barnet.geojson')
+    wards_gdf = wards_gdf[wards_gdf['LAD22NM'] == 'Barnet']
+
     # load major road geometry data
-    roads_df = gpd.read_file('Major_Road_Network_2018_Open_Roads.shp')
+    #roads_df = gpd.read_file('Major_Road_Network_2018_Open_Roads.shp')
 
     # join deprivation data and lsoa boundaries
     df = pd.merge(df_depr_barn, ldn_df, on='LSOA code (2011)')
@@ -234,10 +246,11 @@ def vis_results(output: dict):
     fig, ax = plt.subplots(1, figsize=(15, 15))
     ax.set_xlim(minx, maxx)
     ax.set_ylim(miny, maxy)
-    roads_df.plot(ax=ax, alpha=1, column='roadClassi', edgecolor="blue")
+    #roads_df.plot(ax=ax, alpha=1, column='roadClassi', edgecolor="blue")
     gdf['geometry'].plot(ax=ax, alpha=1, color='w', edgecolor="black")
+    wards_gdf['geometry'].geometry.boundary.plot(ax=ax, alpha=1, edgecolor="black")
     ax.axis('off')
-    ax.set_title('Predictions for Burglaries in Barnet based on the last 5 months',
+    ax.set_title('Predictions for Burglaries in februari 2023',
                  fontdict={'fontsize': '15', 'fontweight': '3'})
     # merge model output with geometric data
     output_df = pd.DataFrame()
