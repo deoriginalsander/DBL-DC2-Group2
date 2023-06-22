@@ -183,7 +183,7 @@ def predict_burglary():
         else:
             score = sum(end_list) / 5 * average_last_12_months
         LSOA_values[item] = score
-    print(LSOA_values)
+    #print(LSOA_values)
     return (LSOA_values)
 
     list_of_patrols = []
@@ -268,6 +268,7 @@ def vis_results(output: dict):
 
 
 vis_results(predict_burglary())
+
 
 conn.commit()
 conn.close()
