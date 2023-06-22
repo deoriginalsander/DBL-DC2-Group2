@@ -12,7 +12,7 @@ from sklearn.cluster import KMeans
 from matplotlib import cm
 from pulp import *
 
-conn = sqlite3.connect('.\\database.db')
+conn = sqlite3.connect('C:\\database.db')
 c = conn.cursor()
 
 
@@ -250,7 +250,7 @@ def vis_results(output: dict):
     gdf['geometry'].plot(ax=ax, alpha=1, color='w', edgecolor="black")
     wards_gdf['geometry'].geometry.boundary.plot(ax=ax, alpha=1, edgecolor="black")
     ax.axis('off')
-    ax.set_title('Predictions for Burglaries in februari 2023',
+    ax.set_title('Scores in March 2023 (mode is seasonal)',
                  fontdict={'fontsize': '15', 'fontweight': '3'})
     # merge model output with geometric data
     output_df = pd.DataFrame()
